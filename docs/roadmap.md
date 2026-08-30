@@ -16,9 +16,9 @@
 - [x] 14. Implement convolution filters
 - [x] 15. Implement edge detection
 - [x] 16. Optimize CUDA kernels
-- [ ] 17. Add GPU benchmarking
-- [ ] 18. Implement CUDA-OpenGL interoperability
-- [ ] 19. Add double buffering
+- [x] 17. Add GPU benchmarking
+- [x] 18. Implement CUDA-OpenGL interoperability
+- [x] 19. Add double buffering
 - [ ] 20. Build a configurable processing pipeline
 - [ ] 21. Add before-and-after comparison tools
 - [ ] 22. Add video and webcam input

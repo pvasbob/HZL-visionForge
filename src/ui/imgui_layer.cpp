@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdint>
+#include <exception>
 #include <ostream>
 #include <string>
 #include <utility>
@@ -174,12 +175,30 @@ void ImGuiLayer::draw_application_shell() {
                 if (image_texture_.upload_rgba8(candidate.rgba_pixels,
                                                 upload_error)) {
                     image_ = std::move(candidate);
+                    using_cuda_presentation_ = false;
+                    try {
+                        cuda_image_.resize(
+                            static_cast<std::size_t>(image_->rgba_pixels.cols),
+                            static_cast<std::size_t>(image_->rgba_pixels.rows));
+                        cuda_image_.upload(image_->rgba_pixels.data,
+                                           image_->rgba_pixels.step);
+                        cuda_presentation_.resize(cuda_image_.width(),
+                                                  cuda_image_.height());
+                        cuda_presentation_.upload_back(cuda_image_);
+                        cuda_presentation_.swap();
+                        using_cuda_presentation_ = true;
+                    } catch (const std::exception& exception) {
+                        upload_error = exception.what();
+                    }
                     zoom_ = 1.0F;
                     pan_x_ = 0.0F;
                     pan_y_ = 0.0F;
                     fit_to_window_ = true;
                     export_path_.front() = '\0';
-                    status_message_ = "Loaded " + image_->source_path.string();
+                    status_message_ = "Loaded " + image_->source_path.string() +
+                                      (using_cuda_presentation_
+                                           ? " | CUDA-OpenGL presentation"
+                                           : " | OpenGL fallback: " + upload_error);
                     ImGui::CloseCurrentPopup();
                 } else {
                     status_message_ = upload_error;
@@ -335,8 +354,11 @@ void ImGuiLayer::draw_application_shell() {
                           bounds.second,
                           canvas_min,
                           canvas_max);
+        const unsigned int displayed_texture =
+            using_cuda_presentation_ ? cuda_presentation_.front_texture_id()
+                                     : image_texture_.id();
         draw_list->AddImage(
-            ImTextureRef{static_cast<ImTextureID>(image_texture_.id())},
+            ImTextureRef{static_cast<ImTextureID>(displayed_texture)},
             bounds.first,
             bounds.second);
         draw_list->PopClipRect();

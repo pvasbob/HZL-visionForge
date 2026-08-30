@@ -3,6 +3,8 @@
 #include "hzl/media/image_loader.hpp"
 #include "hzl/media/image_export.hpp"
 #include "hzl/rendering/image_texture.hpp"
+#include "hzl/processing/cuda_memory.hpp"
+#include "hzl/rendering/cuda_gl_interop.hpp"
 
 #include <array>
 #include <iosfwd>
@@ -38,6 +40,9 @@ private:
     media::ImageExportOptions export_options_;
     std::optional<media::ImageDocument> image_;
     rendering::ImageTexture image_texture_;
+    processing::cuda::ImageBuffer cuda_image_;
+    rendering::CudaGlDoubleBuffer cuda_presentation_;
+    bool using_cuda_presentation_{false};
     float zoom_{1.0F};
     float pan_x_{0.0F};
     float pan_y_{0.0F};

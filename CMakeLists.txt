@@ -139,6 +139,19 @@ target_include_directories(
     hzl_cuda
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
+
+add_library(hzl_interop STATIC src/rendering/cuda_gl_interop.cpp)
+target_link_libraries(
+    hzl_interop
+    PUBLIC
+        hzl_cuda
+        glad_gl_core_45
+        OpenGL::GL
+)
+target_include_directories(
+    hzl_interop
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
 target_include_directories(
     hzl_processing
     PUBLIC
@@ -158,6 +171,7 @@ target_link_libraries(
     hzl-visionforge
     PRIVATE
         hzl_project_options
+        hzl_interop
         hzl_media
         CUDA::cudart
         OpenGL::GL
@@ -283,6 +297,36 @@ if(BUILD_TESTING)
         benchmark.cuda_optimization
         PROPERTIES
             PASS_REGULAR_EXPRESSION "CUDA optimization benchmark: completed"
+            SKIP_RETURN_CODE 77
+    )
+
+    add_executable(gpu_benchmark benchmarks/gpu_benchmark.cpp)
+    target_link_libraries(
+        gpu_benchmark
+        PRIVATE
+            hzl_cuda
+            hzl_processing
+    )
+    add_test(NAME benchmark.gpu COMMAND gpu_benchmark)
+    set_tests_properties(
+        benchmark.gpu
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "GPU benchmark: completed"
+            SKIP_RETURN_CODE 77
+    )
+
+    add_executable(cuda_gl_interop_test tests/cuda_gl_interop_test.cpp)
+    target_link_libraries(
+        cuda_gl_interop_test
+        PRIVATE
+            hzl_interop
+            glfw
+    )
+    add_test(NAME rendering.cuda_gl_interop COMMAND cuda_gl_interop_test)
+    set_tests_properties(
+        rendering.cuda_gl_interop
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "CUDA-OpenGL interop and double-buffer tests: passed"
             SKIP_RETURN_CODE 77
     )
 endif()

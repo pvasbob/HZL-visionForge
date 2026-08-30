@@ -70,3 +70,9 @@ Run the CUDA baseline-versus-shared-memory comparison on a CUDA-capable host:
 ```sh
 ./build/cuda_optimization_benchmark
 ```
+
+Run the reproducible CPU/GPU and transfer benchmark with:
+
+```sh
+./build/gpu_benchmark
+```
