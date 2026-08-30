@@ -3,8 +3,8 @@
 - [x] 1. Define project requirements
 - [x] 2. Create the repository structure
 - [x] 3. Configure CMake and C++17
-- [ ] 4. Detect the RTX 3080 and CUDA environment
-- [ ] 5. Integrate OpenCV
+- [x] 4. Detect the RTX 3080 and CUDA environment
+- [x] 5. Integrate OpenCV
 - [ ] 6. Integrate OpenGL, GLFW, and GLAD
 - [ ] 7. Integrate Dear ImGui
 - [ ] 8. Build the image-loading system
