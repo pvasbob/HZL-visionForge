@@ -19,9 +19,9 @@
 - [x] 17. Add GPU benchmarking
 - [x] 18. Implement CUDA-OpenGL interoperability
 - [x] 19. Add double buffering
-- [ ] 20. Build a configurable processing pipeline
-- [ ] 21. Add before-and-after comparison tools
-- [ ] 22. Add video and webcam input
+- [x] 20. Build a configurable processing pipeline
+- [x] 21. Add before-and-after comparison tools
+- [x] 22. Add video and webcam input
 - [ ] 23. Implement histogram calculation and equalization
 - [ ] 24. Implement tone mapping and color grading
 - [ ] 25. Add automated unit and image-correctness tests

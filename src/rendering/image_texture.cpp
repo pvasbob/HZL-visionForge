@@ -21,6 +21,27 @@ bool ImageTexture::upload_rgba8(const cv::Mat& pixels,
     while (glGetError() != GL_NO_ERROR) {
     }
 
+    if (id_ != 0U && width_ == pixels.cols && height_ == pixels.rows) {
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTextureSubImage2D(id_,
+                            0,
+                            0,
+                            0,
+                            pixels.cols,
+                            pixels.rows,
+                            GL_RGBA,
+                            GL_UNSIGNED_BYTE,
+                            pixels.data);
+        const GLenum update_error = glGetError();
+        if (update_error != GL_NO_ERROR) {
+            error_message = "OpenGL texture update failed with error code " +
+                            std::to_string(update_error) + '.';
+            return false;
+        }
+        error_message.clear();
+        return true;
+    }
+
     GLuint new_texture = 0;
     glCreateTextures(GL_TEXTURE_2D, 1, &new_texture);
     glTextureParameteri(new_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

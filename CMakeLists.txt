@@ -96,6 +96,7 @@ add_library(
     src/media/image_export.cpp
     src/media/image_loader.cpp
     src/media/opencv_environment.cpp
+    src/media/video_source.cpp
 )
 target_link_libraries(
     hzl_media
@@ -121,9 +122,11 @@ target_link_libraries(
 add_library(
     hzl_cuda STATIC
     src/processing/cuda_basic_filters.cu
+    src/processing/cuda_comparison.cu
     src/processing/cuda_convolution_filters.cu
     src/processing/cuda_edge_filters.cu
     src/processing/cuda_memory.cpp
+    src/processing/gpu_pipeline.cpp
 )
 set_target_properties(
     hzl_cuda
@@ -327,6 +330,31 @@ if(BUILD_TESTING)
         rendering.cuda_gl_interop
         PROPERTIES
             PASS_REGULAR_EXPRESSION "CUDA-OpenGL interop and double-buffer tests: passed"
+            SKIP_RETURN_CODE 77
+    )
+
+    add_executable(gpu_pipeline_test tests/gpu_pipeline_test.cpp)
+    target_link_libraries(
+        gpu_pipeline_test
+        PRIVATE
+            hzl_cuda
+            hzl_processing
+    )
+    add_test(NAME processing.gpu_pipeline COMMAND gpu_pipeline_test)
+    set_tests_properties(
+        processing.gpu_pipeline
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "GPU pipeline tests: passed"
+            SKIP_RETURN_CODE 77
+    )
+
+    add_executable(video_source_test tests/video_source_test.cpp)
+    target_link_libraries(video_source_test PRIVATE hzl_media)
+    add_test(NAME media.video_source COMMAND video_source_test)
+    set_tests_properties(
+        media.video_source
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "Video source tests: passed"
             SKIP_RETURN_CODE 77
     )
 endif()

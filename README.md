@@ -58,9 +58,17 @@ Export a loaded image to PNG or JPEG from the command line:
 ./build/hzl-visionforge --export-image input.tiff output.png
 ```
 
+Inspect a video and decode its first frame with:
+
+```sh
+./build/hzl-visionforge --video-info path/to/video.mp4
+```
+
 Running `./build/hzl-visionforge` opens the dockable application shell with
 viewport, processing, profiling, and status panels. Use **File > Open Image** to
-load supported media and **File > Export Image** to save PNG or JPEG output. In
+load images, videos, or webcams and **File > Export Image** to save PNG or JPEG
+output. Configure and reorder GPU filters in **Processing Pipeline** and select
+comparison modes from the viewport toolbar. In
 the viewport, use the mouse wheel to zoom around the
 cursor, drag with the left mouse button to pan, double-click to fit, or use the
 **Fit** and **100%** controls. Press Escape or use **File > Exit** to close it.

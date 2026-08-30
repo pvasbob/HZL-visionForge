@@ -1,6 +1,7 @@
 #include "hzl/media/image_export.hpp"
 #include "hzl/media/image_loader.hpp"
 #include "hzl/media/opencv_environment.hpp"
+#include "hzl/media/video_source.hpp"
 #include "hzl/platform/cuda_environment.hpp"
 #include "hzl/rendering/graphics_environment.hpp"
 #include "hzl/ui/imgui_layer.hpp"
@@ -65,6 +66,25 @@ int main(const int argc, const char* const argv[]) {
             return 9;
         }
         std::cout << "Exported image: " << argv[3] << '\n';
+        return 0;
+    }
+    if (argc == 3 && std::string_view{argv[1]} == "--video-info") {
+        hzl::media::VideoSource source;
+        const hzl::media::MediaOpenResult open = source.open_file(argv[2]);
+        if (!open) {
+            std::cerr << "Video open failed: " << open.message << '\n';
+            return 10;
+        }
+        const hzl::media::FrameReadResult frame = source.read();
+        if (!frame) {
+            std::cerr << "Video decode failed: " << frame.message << '\n';
+            return 10;
+        }
+        std::cout << "Video: " << source.label() << '\n'
+                  << "Dimensions: " << source.width() << " x "
+                  << source.height() << '\n'
+                  << "FPS: " << source.fps() << '\n'
+                  << "First frame: RGBA8\n";
         return 0;
     }
 
