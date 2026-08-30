@@ -7,9 +7,10 @@ incrementally; see the [requirements](docs/requirements.md),
 
 ## Build
 
-A C++17 compiler, CMake 3.20 or newer, a CUDA toolkit, and OpenCV 4 with `core`,
-`imgproc`, `imgcodecs`, and `videoio` are required. Configure and build in a
-separate directory (the RTX 3080 target defaults to `sm_86`):
+A C++17 compiler, CMake 3.20 or newer, a CUDA toolkit, OpenCV 4 with `core`,
+`imgproc`, `imgcodecs`, and `videoio`, OpenGL, and GLFW 3.3 are required. CMake
+fetches pinned GLAD 2.0.8 and Dear ImGui 1.92.9b docking sources. Configure and
+build in a separate directory (the RTX 3080 target defaults to `sm_86`):
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -32,3 +33,19 @@ Inspect the linked OpenCV version and run its in-memory smoke test with:
 ```sh
 ./build/hzl-visionforge --opencv-info
 ```
+
+Inspect the GLFW, OpenGL, and GLAD environment without opening a visible window:
+
+```sh
+./build/hzl-visionforge --graphics-info
+```
+
+Verify the Dear ImGui context, keyboard navigation, and docking configuration:
+
+```sh
+./build/hzl-visionforge --imgui-info
+```
+
+Running `./build/hzl-visionforge` opens the dockable application shell with
+viewport, processing, profiling, and status panels. Press Escape or use
+**File > Exit** to close it.

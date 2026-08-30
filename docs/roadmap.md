@@ -5,8 +5,8 @@
 - [x] 3. Configure CMake and C++17
 - [x] 4. Detect the RTX 3080 and CUDA environment
 - [x] 5. Integrate OpenCV
-- [ ] 6. Integrate OpenGL, GLFW, and GLAD
-- [ ] 7. Integrate Dear ImGui
+- [x] 6. Integrate OpenGL, GLFW, and GLAD
+- [x] 7. Integrate Dear ImGui
 - [ ] 8. Build the image-loading system
 - [ ] 9. Create the image viewport
 - [ ] 10. Add image export

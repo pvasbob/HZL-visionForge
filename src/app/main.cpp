@@ -1,5 +1,7 @@
 #include "hzl/media/opencv_environment.hpp"
 #include "hzl/platform/cuda_environment.hpp"
+#include "hzl/rendering/graphics_environment.hpp"
+#include "hzl/ui/imgui_layer.hpp"
 #include "hzl/version.hpp"
 
 #include <iostream>
@@ -24,9 +26,14 @@ int main(const int argc, const char* const argv[]) {
         return static_cast<int>(
             hzl::media::report_opencv_environment(std::cout, std::cerr));
     }
+    if (argc == 2 && std::string_view{argv[1]} == "--graphics-info") {
+        return static_cast<int>(
+            hzl::rendering::report_graphics_environment(std::cout, std::cerr));
+    }
+    if (argc == 2 && std::string_view{argv[1]} == "--imgui-info") {
+        return hzl::ui::report_imgui_environment(std::cout, std::cerr) ? 0 : 7;
+    }
 
-    std::cout << application_name
-              << " application skeleton\nUse --gpu-info to inspect CUDA support "
-                 "or --opencv-info to inspect OpenCV support.\n";
-    return 0;
+    return static_cast<int>(
+        hzl::rendering::run_graphics_application(std::cerr));
 }
