@@ -10,9 +10,9 @@
 - [x] 8. Build the image-loading system
 - [x] 9. Create the image viewport
 - [x] 10. Add image export
-- [ ] 11. Create CPU reference filters
-- [ ] 12. Create CUDA memory management
-- [ ] 13. Implement basic CUDA kernels
+- [x] 11. Create CPU reference filters
+- [x] 12. Create CUDA memory management
+- [x] 13. Implement basic CUDA kernels
 - [ ] 14. Implement convolution filters
 - [ ] 15. Implement edge detection
 - [ ] 16. Optimize CUDA kernels

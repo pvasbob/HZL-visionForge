@@ -54,6 +54,7 @@ target_include_directories(
         "${imgui_SOURCE_DIR}"
         "${imgui_SOURCE_DIR}/backends"
 )
+
 target_link_libraries(imgui_backend PUBLIC glfw OpenGL::GL)
 target_compile_features(imgui_backend PUBLIC cxx_std_17)
 set_target_properties(
@@ -104,6 +105,40 @@ target_link_libraries(
 )
 target_include_directories(
     hzl_media
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        ${OpenCV_INCLUDE_DIRS}
+)
+
+add_library(hzl_processing STATIC src/processing/cpu_filters.cpp)
+target_link_libraries(
+    hzl_processing
+    PUBLIC
+        hzl_project_options
+        ${OpenCV_LIBS}
+)
+
+add_library(
+    hzl_cuda STATIC
+    src/processing/cuda_basic_filters.cu
+    src/processing/cuda_memory.cpp
+)
+set_target_properties(
+    hzl_cuda
+    PROPERTIES CUDA_ARCHITECTURES 86
+)
+target_link_libraries(
+    hzl_cuda
+    PUBLIC
+        hzl_project_options
+        CUDA::cudart
+)
+target_include_directories(
+    hzl_cuda
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+target_include_directories(
+    hzl_processing
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
         ${OpenCV_INCLUDE_DIRS}
@@ -184,5 +219,38 @@ if(BUILD_TESTING)
     set_tests_properties(
         media.image_export
         PROPERTIES PASS_REGULAR_EXPRESSION "Image export tests: passed"
+    )
+
+    add_executable(cpu_filters_test tests/cpu_filters_test.cpp)
+    target_link_libraries(cpu_filters_test PRIVATE hzl_processing)
+    add_test(NAME processing.cpu_filters COMMAND cpu_filters_test)
+    set_tests_properties(
+        processing.cpu_filters
+        PROPERTIES PASS_REGULAR_EXPRESSION "CPU reference filter tests: passed"
+    )
+
+    add_executable(cuda_memory_test tests/cuda_memory_test.cpp)
+    target_link_libraries(cuda_memory_test PRIVATE hzl_cuda)
+    add_test(NAME processing.cuda_memory COMMAND cuda_memory_test)
+    set_tests_properties(
+        processing.cuda_memory
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "CUDA memory tests: passed"
+            SKIP_RETURN_CODE 77
+    )
+
+    add_executable(cuda_basic_filters_test tests/cuda_basic_filters_test.cpp)
+    target_link_libraries(
+        cuda_basic_filters_test
+        PRIVATE
+            hzl_cuda
+            hzl_processing
+    )
+    add_test(NAME processing.cuda_basic_filters COMMAND cuda_basic_filters_test)
+    set_tests_properties(
+        processing.cuda_basic_filters
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "CUDA basic filter tests: passed"
+            SKIP_RETURN_CODE 77
     )
 endif()
