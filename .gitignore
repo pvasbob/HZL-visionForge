@@ -1,0 +1,54 @@
+# CMake and generated build trees
+/build*/
+/out/
+/cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+*.ninja
+.ninja_deps
+.ninja_log
+
+# Compiler and CUDA outputs
+*.d
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.ptx
+*.cubin
+*.fatbin
+*.gpu
+
+# Tests, profiling, and coverage
+*.gcda
+*.gcno
+*.gcov
+coverage/
+profiling/
+
+# Editor and local tooling state
+.cache/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local Codex workspace metadata
+/.agents/
+/.codex/
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
