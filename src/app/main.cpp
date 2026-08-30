@@ -1,3 +1,5 @@
+#include "hzl/media/image_export.hpp"
+#include "hzl/media/image_loader.hpp"
 #include "hzl/media/opencv_environment.hpp"
 #include "hzl/platform/cuda_environment.hpp"
 #include "hzl/rendering/graphics_environment.hpp"
@@ -32,6 +34,38 @@ int main(const int argc, const char* const argv[]) {
     }
     if (argc == 2 && std::string_view{argv[1]} == "--imgui-info") {
         return hzl::ui::report_imgui_environment(std::cout, std::cerr) ? 0 : 7;
+    }
+    if (argc == 3 && std::string_view{argv[1]} == "--image-info") {
+        hzl::media::ImageLoadResult result = hzl::media::load_image(argv[2]);
+        if (!result) {
+            std::cerr << "Image load failed: " << result.message << '\n';
+            return 8;
+        }
+        const hzl::media::ImageDocument& image = result.document.value();
+        std::cout << "Image: " << image.source_path.string() << '\n'
+                  << "Dimensions: " << image.rgba_pixels.cols << " x "
+                  << image.rgba_pixels.rows << '\n'
+                  << "Source depth: "
+                  << hzl::media::pixel_depth_name(image.original_depth) << '\n'
+                  << "Source channels: " << image.original_channels << '\n'
+                  << "Normalized format: RGBA8\n";
+        return 0;
+    }
+    if (argc == 4 && std::string_view{argv[1]} == "--export-image") {
+        const hzl::media::ImageLoadResult load_result =
+            hzl::media::load_image(argv[2]);
+        if (!load_result) {
+            std::cerr << "Image load failed: " << load_result.message << '\n';
+            return 8;
+        }
+        const hzl::media::ImageExportResult export_result =
+            hzl::media::export_image(load_result.document->rgba_pixels, argv[3]);
+        if (!export_result) {
+            std::cerr << "Image export failed: " << export_result.message << '\n';
+            return 9;
+        }
+        std::cout << "Exported image: " << argv[3] << '\n';
+        return 0;
     }
 
     return static_cast<int>(

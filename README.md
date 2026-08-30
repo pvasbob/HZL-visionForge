@@ -46,6 +46,21 @@ Verify the Dear ImGui context, keyboard navigation, and docking configuration:
 ./build/hzl-visionforge --imgui-info
 ```
 
+Load and inspect a PNG, JPEG, BMP, or TIFF image from the command line:
+
+```sh
+./build/hzl-visionforge --image-info path/to/image.png
+```
+
+Export a loaded image to PNG or JPEG from the command line:
+
+```sh
+./build/hzl-visionforge --export-image input.tiff output.png
+```
+
 Running `./build/hzl-visionforge` opens the dockable application shell with
-viewport, processing, profiling, and status panels. Press Escape or use
-**File > Exit** to close it.
+viewport, processing, profiling, and status panels. Use **File > Open Image** to
+load supported media and **File > Export Image** to save PNG or JPEG output. In
+the viewport, use the mouse wheel to zoom around the
+cursor, drag with the left mouse button to pan, double-click to fit, or use the
+**Fit** and **100%** controls. Press Escape or use **File > Exit** to close it.

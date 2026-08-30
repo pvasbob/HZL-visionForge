@@ -7,9 +7,9 @@
 - [x] 5. Integrate OpenCV
 - [x] 6. Integrate OpenGL, GLFW, and GLAD
 - [x] 7. Integrate Dear ImGui
-- [ ] 8. Build the image-loading system
-- [ ] 9. Create the image viewport
-- [ ] 10. Add image export
+- [x] 8. Build the image-loading system
+- [x] 9. Create the image viewport
+- [x] 10. Add image export
 - [ ] 11. Create CPU reference filters
 - [ ] 12. Create CUDA memory management
 - [ ] 13. Implement basic CUDA kernels

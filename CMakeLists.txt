@@ -90,31 +90,49 @@ configure_file(
     @ONLY
 )
 
+add_library(
+    hzl_media STATIC
+    src/media/image_export.cpp
+    src/media/image_loader.cpp
+    src/media/opencv_environment.cpp
+)
+target_link_libraries(
+    hzl_media
+    PUBLIC
+        hzl_project_options
+        ${OpenCV_LIBS}
+)
+target_include_directories(
+    hzl_media
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        ${OpenCV_INCLUDE_DIRS}
+)
+
 add_executable(
     hzl-visionforge
     src/app/main.cpp
-    src/media/opencv_environment.cpp
     src/platform/cuda_environment.cu
     src/rendering/graphics_environment.cpp
+    src/rendering/image_texture.cpp
     src/ui/imgui_layer.cpp
 )
 target_link_libraries(
     hzl-visionforge
     PRIVATE
         hzl_project_options
+        hzl_media
         CUDA::cudart
         OpenGL::GL
         glad_gl_core_45
         glfw
         imgui_backend
-        ${OpenCV_LIBS}
 )
 target_include_directories(
     hzl-visionforge
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
         "${CMAKE_CURRENT_BINARY_DIR}/generated"
-        ${OpenCV_INCLUDE_DIRS}
 )
 
 if(BUILD_TESTING)
@@ -150,5 +168,21 @@ if(BUILD_TESTING)
     set_tests_properties(
         environment.imgui
         PROPERTIES PASS_REGULAR_EXPRESSION "Dear ImGui smoke test: passed"
+    )
+
+    add_executable(image_loader_test tests/image_loader_test.cpp)
+    target_link_libraries(image_loader_test PRIVATE hzl_media)
+    add_test(NAME media.image_loader COMMAND image_loader_test)
+    set_tests_properties(
+        media.image_loader
+        PROPERTIES PASS_REGULAR_EXPRESSION "Image loader tests: passed"
+    )
+
+    add_executable(image_export_test tests/image_export_test.cpp)
+    target_link_libraries(image_export_test PRIVATE hzl_media)
+    add_test(NAME media.image_export COMMAND image_export_test)
+    set_tests_properties(
+        media.image_export
+        PROPERTIES PASS_REGULAR_EXPRESSION "Image export tests: passed"
     )
 endif()
