@@ -207,4 +207,126 @@ cv::Mat laplacian_edges(const cv::Mat& rgba, const double strength) {
     return gray_with_alpha(edges, source_alpha(rgba));
 }
 
+Histogram luminance_histogram(const cv::Mat& rgba) {
+    validate_image(rgba);
+    Histogram histogram{};
+    for (int row = 0; row < rgba.rows; ++row) {
+        for (int column = 0; column < rgba.cols; ++column) {
+            const cv::Vec4b pixel = rgba.at<cv::Vec4b>(row, column);
+            const unsigned int luminance =
+                (77U * pixel[0] + 150U * pixel[1] + 29U * pixel[2] + 128U) >> 8U;
+            ++histogram[luminance];
+        }
+    }
+    return histogram;
+}
+
+cv::Mat histogram_equalization(const cv::Mat& rgba) {
+    validate_image(rgba);
+    const std::uint64_t pixel_count =
+        static_cast<std::uint64_t>(rgba.rows) * static_cast<std::uint64_t>(rgba.cols);
+    std::array<std::array<std::uint32_t, 256>, 3> histograms{};
+    for (int row = 0; row < rgba.rows; ++row) {
+        for (int column = 0; column < rgba.cols; ++column) {
+            const cv::Vec4b pixel = rgba.at<cv::Vec4b>(row, column);
+            for (int channel = 0; channel < 3; ++channel) {
+                ++histograms[static_cast<std::size_t>(channel)][pixel[channel]];
+            }
+        }
+    }
+
+    std::array<std::array<unsigned char, 256>, 3> lookup{};
+    for (std::size_t channel = 0; channel < 3; ++channel) {
+        std::uint64_t cumulative = 0;
+        std::uint64_t minimum = 0;
+        bool found = false;
+        for (std::size_t value = 0; value < 256; ++value) {
+            cumulative += histograms[channel][value];
+            if (!found && cumulative != 0) {
+                minimum = cumulative;
+                found = true;
+            }
+            lookup[channel][value] = pixel_count == minimum
+                ? static_cast<unsigned char>(value)
+                : static_cast<unsigned char>(std::lround(
+                      static_cast<double>(cumulative - minimum) * 255.0 /
+                      static_cast<double>(pixel_count - minimum)));
+        }
+    }
+
+    cv::Mat output = rgba.clone();
+    for (int row = 0; row < rgba.rows; ++row) {
+        for (int column = 0; column < rgba.cols; ++column) {
+            const cv::Vec4b source = rgba.at<cv::Vec4b>(row, column);
+            cv::Vec4b& destination = output.at<cv::Vec4b>(row, column);
+            for (int channel = 0; channel < 3; ++channel) {
+                destination[channel] =
+                    lookup[static_cast<std::size_t>(channel)][source[channel]];
+            }
+        }
+    }
+    return output;
+}
+
+cv::Mat tone_map(const cv::Mat& rgba, const double exposure) {
+    validate_image(rgba);
+    if (!std::isfinite(exposure)) {
+        throw std::invalid_argument{"Exposure must be finite."};
+    }
+    const double scale = std::exp2(exposure);
+    cv::Mat output = rgba.clone();
+    for (int row = 0; row < rgba.rows; ++row) {
+        for (int column = 0; column < rgba.cols; ++column) {
+            const cv::Vec4b source = rgba.at<cv::Vec4b>(row, column);
+            cv::Vec4b& destination = output.at<cv::Vec4b>(row, column);
+            for (int channel = 0; channel < 3; ++channel) {
+                const double linear = source[channel] / 255.0 * scale;
+                destination[channel] = cv::saturate_cast<unsigned char>(
+                    std::lround(linear / (1.0 + linear) * 255.0));
+            }
+        }
+    }
+    return output;
+}
+
+cv::Mat color_grade(const cv::Mat& rgba,
+                    const double saturation,
+                    const double temperature,
+                    const double tint,
+                    const double red_gain,
+                    const double green_gain,
+                    const double blue_gain) {
+    validate_image(rgba);
+    const std::array<double, 6> parameters{
+        saturation, temperature, tint, red_gain, green_gain, blue_gain};
+    if (!std::all_of(parameters.begin(), parameters.end(),
+                     [](const double value) { return std::isfinite(value); }) ||
+        saturation < 0.0 || red_gain < 0.0 || green_gain < 0.0 ||
+        blue_gain < 0.0) {
+        throw std::invalid_argument{"Color grading parameters are invalid."};
+    }
+    cv::Mat output = rgba.clone();
+    for (int row = 0; row < rgba.rows; ++row) {
+        for (int column = 0; column < rgba.cols; ++column) {
+            const cv::Vec4b source = rgba.at<cv::Vec4b>(row, column);
+            const double luminance = 0.299 * source[0] + 0.587 * source[1] +
+                                     0.114 * source[2];
+            const std::array<double, 3> shifts{temperature * 32.0,
+                                               tint * 16.0,
+                                               -temperature * 32.0};
+            const std::array<double, 3> gains{red_gain, green_gain, blue_gain};
+            cv::Vec4b& destination = output.at<cv::Vec4b>(row, column);
+            for (int channel = 0; channel < 3; ++channel) {
+                const double graded =
+                    (luminance + (source[channel] - luminance) * saturation +
+                     shifts[static_cast<std::size_t>(channel)]) *
+                    gains[static_cast<std::size_t>(channel)];
+                destination[channel] = cv::saturate_cast<unsigned char>(
+                    std::lround(graded));
+            }
+        }
+    }
+    return output;
+}
+
 }  // namespace hzl::processing::cpu

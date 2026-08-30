@@ -1,6 +1,7 @@
 #include "hzl/processing/gpu_pipeline.hpp"
 
 #include "hzl/processing/cuda_basic_filters.hpp"
+#include "hzl/processing/cuda_color_filters.hpp"
 #include "hzl/processing/cuda_convolution_filters.hpp"
 #include "hzl/processing/cuda_edge_filters.hpp"
 
@@ -31,6 +32,12 @@ FilterParameters default_parameters(const FilterType type) {
         case FilterType::sobel:
         case FilterType::laplacian:
             return EdgeParameters{};
+        case FilterType::histogram_equalization:
+            return std::monostate{};
+        case FilterType::tone_mapping:
+            return ToneMappingParameters{};
+        case FilterType::color_grading:
+            return ColorGradingParameters{};
     }
     throw std::logic_error{"Unknown pipeline filter type."};
 }
@@ -114,6 +121,23 @@ void launch(const PipelineOperation& operation,
                 cuda::KernelImplementation::shared_memory,
                 stream);
             break;
+        case FilterType::histogram_equalization:
+            cuda::histogram_equalization(input, output, stream);
+            break;
+        case FilterType::tone_mapping:
+            cuda::tone_map(input, output,
+                           std::get<ToneMappingParameters>(operation.parameters).exposure,
+                           stream);
+            break;
+        case FilterType::color_grading: {
+            const auto parameters =
+                std::get<ColorGradingParameters>(operation.parameters);
+            cuda::color_grade(input, output, parameters.saturation,
+                              parameters.temperature, parameters.tint,
+                              parameters.red_gain, parameters.green_gain,
+                              parameters.blue_gain, stream);
+            break;
+        }
     }
 }
 
@@ -131,6 +155,9 @@ const char* filter_name(const FilterType type) noexcept {
         case FilterType::emboss: return "Emboss";
         case FilterType::sobel: return "Sobel";
         case FilterType::laplacian: return "Laplacian";
+        case FilterType::histogram_equalization: return "Histogram Equalization";
+        case FilterType::tone_mapping: return "Tone Mapping";
+        case FilterType::color_grading: return "Color Grading";
     }
     return "Unknown";
 }

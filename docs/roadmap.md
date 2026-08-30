@@ -22,9 +22,9 @@
 - [x] 20. Build a configurable processing pipeline
 - [x] 21. Add before-and-after comparison tools
 - [x] 22. Add video and webcam input
-- [ ] 23. Implement histogram calculation and equalization
-- [ ] 24. Implement tone mapping and color grading
-- [ ] 25. Add automated unit and image-correctness tests
+- [x] 23. Implement histogram calculation and equalization
+- [x] 24. Implement tone mapping and color grading
+- [x] 25. Add automated unit and image-correctness tests
 - [ ] 26. Add robust error handling and user-visible diagnostics
 - [ ] 27. Profile and tune the representative 4K pipeline
 - [ ] 28. Publish reproducible CPU-versus-GPU benchmarks

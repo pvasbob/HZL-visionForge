@@ -20,6 +20,9 @@ enum class FilterType {
     emboss,
     sobel,
     laplacian,
+    histogram_equalization,
+    tone_mapping,
+    color_grading,
 };
 
 struct BrightnessContrastParameters {
@@ -32,6 +35,15 @@ struct GaussianBlurParameters { int kernel_size{5}; float sigma{1.2F}; };
 struct SharpenParameters { float amount{1.0F}; };
 struct EmbossParameters { float strength{1.0F}; };
 struct EdgeParameters { float strength{1.0F}; };
+struct ToneMappingParameters { float exposure{0.0F}; };
+struct ColorGradingParameters {
+    float saturation{1.0F};
+    float temperature{0.0F};
+    float tint{0.0F};
+    float red_gain{1.0F};
+    float green_gain{1.0F};
+    float blue_gain{1.0F};
+};
 
 using FilterParameters = std::variant<std::monostate,
                                       BrightnessContrastParameters,
@@ -40,7 +52,9 @@ using FilterParameters = std::variant<std::monostate,
                                       GaussianBlurParameters,
                                       SharpenParameters,
                                       EmbossParameters,
-                                      EdgeParameters>;
+                                      EdgeParameters,
+                                      ToneMappingParameters,
+                                      ColorGradingParameters>;
 
 struct PipelineOperation {
     std::uint64_t id{0};

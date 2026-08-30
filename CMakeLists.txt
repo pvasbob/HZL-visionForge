@@ -123,6 +123,7 @@ add_library(
     hzl_cuda STATIC
     src/processing/cuda_basic_filters.cu
     src/processing/cuda_comparison.cu
+    src/processing/cuda_color_filters.cu
     src/processing/cuda_convolution_filters.cu
     src/processing/cuda_edge_filters.cu
     src/processing/cuda_memory.cpp
@@ -176,6 +177,7 @@ target_link_libraries(
         hzl_project_options
         hzl_interop
         hzl_media
+        hzl_processing
         CUDA::cudart
         OpenGL::GL
         glad_gl_core_45
@@ -286,6 +288,21 @@ if(BUILD_TESTING)
         processing.cuda_advanced_filters
         PROPERTIES
             PASS_REGULAR_EXPRESSION "CUDA advanced filter tests: passed"
+            SKIP_RETURN_CODE 77
+    )
+
+    add_executable(cuda_color_filters_test tests/cuda_color_filters_test.cpp)
+    target_link_libraries(
+        cuda_color_filters_test
+        PRIVATE
+            hzl_cuda
+            hzl_processing
+    )
+    add_test(NAME processing.cuda_color_filters COMMAND cuda_color_filters_test)
+    set_tests_properties(
+        processing.cuda_color_filters
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "CUDA color filter correctness tests: passed"
             SKIP_RETURN_CODE 77
     )
 

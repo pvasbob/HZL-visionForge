@@ -1,4 +1,5 @@
 #include "hzl/ui/imgui_layer.hpp"
+#include "hzl/processing/cpu_filters.hpp"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -8,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cfloat>
 #include <cstdio>
 #include <cstdint>
 #include <exception>
@@ -134,8 +136,33 @@ bool draw_filter_parameters(processing::PipelineOperation& operation) {
                 "Strength", &parameters.strength, 0.0F, 5.0F);
             break;
         }
+        case processing::FilterType::tone_mapping: {
+            auto& parameters =
+                std::get<processing::ToneMappingParameters>(operation.parameters);
+            changed = ImGui::SliderFloat("Exposure (EV)", &parameters.exposure,
+                                         -5.0F, 5.0F);
+            break;
+        }
+        case processing::FilterType::color_grading: {
+            auto& parameters =
+                std::get<processing::ColorGradingParameters>(operation.parameters);
+            changed = ImGui::SliderFloat("Saturation", &parameters.saturation,
+                                         0.0F, 2.0F) || changed;
+            changed = ImGui::SliderFloat("Temperature", &parameters.temperature,
+                                         -1.0F, 1.0F) || changed;
+            changed = ImGui::SliderFloat("Tint", &parameters.tint,
+                                         -1.0F, 1.0F) || changed;
+            changed = ImGui::SliderFloat("Red gain", &parameters.red_gain,
+                                         0.0F, 2.0F) || changed;
+            changed = ImGui::SliderFloat("Green gain", &parameters.green_gain,
+                                         0.0F, 2.0F) || changed;
+            changed = ImGui::SliderFloat("Blue gain", &parameters.blue_gain,
+                                         0.0F, 2.0F) || changed;
+            break;
+        }
         case processing::FilterType::grayscale:
         case processing::FilterType::invert:
+        case processing::FilterType::histogram_equalization:
             break;
     }
     return changed;
@@ -681,6 +708,9 @@ void ImGuiLayer::draw_application_shell() {
         processing::FilterType::emboss,
         processing::FilterType::sobel,
         processing::FilterType::laplacian,
+        processing::FilterType::histogram_equalization,
+        processing::FilterType::tone_mapping,
+        processing::FilterType::color_grading,
     };
     static int selected_filter = 0;
     ImGui::SetNextItemWidth(-90.0F);
@@ -756,6 +786,18 @@ void ImGuiLayer::draw_application_shell() {
     ImGui::Begin("Profiler");
     ImGui::Text("Frame time: --");
     ImGui::Text("GPU memory: --");
+    if (image_) {
+        const processing::cpu::Histogram histogram =
+            processing::cpu::luminance_histogram(image_->rgba_pixels);
+        std::array<float, 256> plot{};
+        std::transform(histogram.begin(), histogram.end(), plot.begin(),
+                       [](const std::uint32_t count) {
+                           return static_cast<float>(count);
+                       });
+        ImGui::PlotHistogram("Luminance", plot.data(),
+                             static_cast<int>(plot.size()), 0, nullptr,
+                             0.0F, FLT_MAX, ImVec2{0.0F, 100.0F});
+    }
     ImGui::End();
 
     ImGui::Begin("Status");

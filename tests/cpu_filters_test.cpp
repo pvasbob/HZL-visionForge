@@ -66,7 +66,7 @@ int main() {
     }
 
     using NamedOutput = std::pair<const char*, cv::Mat>;
-    const std::array<NamedOutput, 10> outputs{{
+    const std::array<NamedOutput, 13> outputs{{
         {"grayscale", hzl::processing::cpu::grayscale(source)},
         {"invert", hzl::processing::cpu::invert(source)},
         {"brightness/contrast",
@@ -79,6 +79,11 @@ int main() {
         {"emboss", hzl::processing::cpu::emboss(source, 1.0)},
         {"Sobel", hzl::processing::cpu::sobel_edges(source)},
         {"Laplacian", hzl::processing::cpu::laplacian_edges(source)},
+        {"histogram equalization",
+         hzl::processing::cpu::histogram_equalization(source)},
+        {"tone mapping", hzl::processing::cpu::tone_map(source, 1.0)},
+        {"color grading", hzl::processing::cpu::color_grade(
+                              source, 1.2, 0.15, -0.1, 1.05, 0.95, 1.1)},
     }};
 
     bool passed = true;
@@ -110,6 +115,32 @@ int main() {
                             cv::NORM_INF) == 0.0,
                    "sharpen amount 0 is not an identity") &&
              passed;
+    const hzl::processing::cpu::Histogram histogram =
+        hzl::processing::cpu::luminance_histogram(source);
+    std::uint64_t histogram_total = 0;
+    for (const std::uint32_t count : histogram) histogram_total += count;
+    passed = check(histogram_total == static_cast<std::uint64_t>(source.total()),
+                   "histogram bin total differs from pixel count") && passed;
+
+    cv::Mat known(1, 4, CV_8UC4);
+    known.at<cv::Vec4b>(0, 0) = cv::Vec4b{0, 0, 0, 1};
+    known.at<cv::Vec4b>(0, 1) = cv::Vec4b{255, 255, 255, 2};
+    known.at<cv::Vec4b>(0, 2) = cv::Vec4b{255, 0, 0, 3};
+    known.at<cv::Vec4b>(0, 3) = cv::Vec4b{0, 255, 0, 4};
+    const auto known_histogram =
+        hzl::processing::cpu::luminance_histogram(known);
+    passed = check(known_histogram[0] == 1 && known_histogram[255] == 1 &&
+                       known_histogram[77] == 1 && known_histogram[149] == 1,
+                   "luminance histogram produced incorrect bins") && passed;
+
+    cv::Mat constant(3, 3, CV_8UC4, cv::Scalar{42, 81, 123, 177});
+    passed = check(cv::norm(hzl::processing::cpu::histogram_equalization(constant),
+                            constant, cv::NORM_INF) == 0.0,
+                   "equalization changed a constant image") && passed;
+    passed = check(cv::norm(hzl::processing::cpu::color_grade(
+                                source, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0),
+                            source, cv::NORM_INF) == 0.0,
+                   "neutral color grading is not an identity") && passed;
 
     passed = check(throws_invalid_argument([&] {
                        static_cast<void>(hzl::processing::cpu::box_blur(source, 2));
@@ -128,6 +159,11 @@ int main() {
                    }),
                    "empty input was accepted") &&
              passed;
+    passed = check(throws_invalid_argument([&] {
+                       static_cast<void>(hzl::processing::cpu::color_grade(
+                           source, -1.0, 0.0, 0.0, 1.0, 1.0, 1.0));
+                   }),
+                   "negative saturation was accepted") && passed;
 
     if (passed) {
         std::cout << "CPU reference filter tests: passed\n";
