@@ -172,8 +172,11 @@ cv::Mat emboss(const cv::Mat& rgba, const double strength) {
     return merge_rgb_alpha(embossed, source_alpha(rgba));
 }
 
-cv::Mat sobel_edges(const cv::Mat& rgba) {
+cv::Mat sobel_edges(const cv::Mat& rgba, const double strength) {
     validate_image(rgba);
+    if (!std::isfinite(strength) || strength < 0.0) {
+        throw std::invalid_argument{"Edge strength must be finite and non-negative."};
+    }
     cv::Mat gray;
     cv::cvtColor(rgba, gray, cv::COLOR_RGBA2GRAY);
     cv::Mat horizontal;
@@ -185,19 +188,22 @@ cv::Mat sobel_edges(const cv::Mat& rgba) {
     cv::Mat magnitude;
     cv::magnitude(horizontal, vertical, magnitude);
     cv::Mat edges;
-    magnitude.convertTo(edges, CV_8UC1);
+    magnitude.convertTo(edges, CV_8UC1, strength);
     return gray_with_alpha(edges, source_alpha(rgba));
 }
 
-cv::Mat laplacian_edges(const cv::Mat& rgba) {
+cv::Mat laplacian_edges(const cv::Mat& rgba, const double strength) {
     validate_image(rgba);
+    if (!std::isfinite(strength) || strength < 0.0) {
+        throw std::invalid_argument{"Edge strength must be finite and non-negative."};
+    }
     cv::Mat gray;
     cv::cvtColor(rgba, gray, cv::COLOR_RGBA2GRAY);
     cv::Mat laplacian;
-    cv::Laplacian(gray, laplacian, CV_16S, 3, 1.0, 0.0,
+    cv::Laplacian(gray, laplacian, CV_16S, 1, 1.0, 0.0,
                   cv::BORDER_REFLECT_101);
     cv::Mat edges;
-    cv::convertScaleAbs(laplacian, edges);
+    cv::convertScaleAbs(laplacian, edges, strength);
     return gray_with_alpha(edges, source_alpha(rgba));
 }
 

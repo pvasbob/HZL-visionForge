@@ -121,6 +121,8 @@ target_link_libraries(
 add_library(
     hzl_cuda STATIC
     src/processing/cuda_basic_filters.cu
+    src/processing/cuda_convolution_filters.cu
+    src/processing/cuda_edge_filters.cu
     src/processing/cuda_memory.cpp
 )
 set_target_properties(
@@ -251,6 +253,36 @@ if(BUILD_TESTING)
         processing.cuda_basic_filters
         PROPERTIES
             PASS_REGULAR_EXPRESSION "CUDA basic filter tests: passed"
+            SKIP_RETURN_CODE 77
+    )
+
+    add_executable(cuda_advanced_filters_test tests/cuda_advanced_filters_test.cpp)
+    target_link_libraries(
+        cuda_advanced_filters_test
+        PRIVATE
+            hzl_cuda
+            hzl_processing
+    )
+    add_test(NAME processing.cuda_advanced_filters
+             COMMAND cuda_advanced_filters_test)
+    set_tests_properties(
+        processing.cuda_advanced_filters
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "CUDA advanced filter tests: passed"
+            SKIP_RETURN_CODE 77
+    )
+
+    add_executable(
+        cuda_optimization_benchmark
+        benchmarks/cuda_optimization_benchmark.cpp
+    )
+    target_link_libraries(cuda_optimization_benchmark PRIVATE hzl_cuda)
+    add_test(NAME benchmark.cuda_optimization
+             COMMAND cuda_optimization_benchmark)
+    set_tests_properties(
+        benchmark.cuda_optimization
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "CUDA optimization benchmark: completed"
             SKIP_RETURN_CODE 77
     )
 endif()

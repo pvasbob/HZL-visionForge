@@ -19,7 +19,8 @@ namespace hzl::processing::cpu {
                                     double sigma);
 [[nodiscard]] cv::Mat sharpen(const cv::Mat& rgba, double amount);
 [[nodiscard]] cv::Mat emboss(const cv::Mat& rgba, double strength);
-[[nodiscard]] cv::Mat sobel_edges(const cv::Mat& rgba);
-[[nodiscard]] cv::Mat laplacian_edges(const cv::Mat& rgba);
+[[nodiscard]] cv::Mat sobel_edges(const cv::Mat& rgba, double strength = 1.0);
+[[nodiscard]] cv::Mat laplacian_edges(const cv::Mat& rgba,
+                                      double strength = 1.0);
 
 }  // namespace hzl::processing::cpu

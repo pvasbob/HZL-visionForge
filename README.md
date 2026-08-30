@@ -64,3 +64,9 @@ load supported media and **File > Export Image** to save PNG or JPEG output. In
 the viewport, use the mouse wheel to zoom around the
 cursor, drag with the left mouse button to pan, double-click to fit, or use the
 **Fit** and **100%** controls. Press Escape or use **File > Exit** to close it.
+
+Run the CUDA baseline-versus-shared-memory comparison on a CUDA-capable host:
+
+```sh
+./build/cuda_optimization_benchmark
+```

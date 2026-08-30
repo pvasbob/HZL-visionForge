@@ -13,9 +13,9 @@
 - [x] 11. Create CPU reference filters
 - [x] 12. Create CUDA memory management
 - [x] 13. Implement basic CUDA kernels
-- [ ] 14. Implement convolution filters
-- [ ] 15. Implement edge detection
-- [ ] 16. Optimize CUDA kernels
+- [x] 14. Implement convolution filters
+- [x] 15. Implement edge detection
+- [x] 16. Optimize CUDA kernels
 - [ ] 17. Add GPU benchmarking
 - [ ] 18. Implement CUDA-OpenGL interoperability
 - [ ] 19. Add double buffering
