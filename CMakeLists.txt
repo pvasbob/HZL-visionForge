@@ -9,6 +9,7 @@ project(
 
 include(CheckLanguage)
 include(FetchContent)
+include(GNUInstallDirs)
 check_language(CUDA)
 if(NOT CMAKE_CUDA_COMPILER)
     message(FATAL_ERROR "CUDA compiler not found. Install the CUDA toolkit or set CUDACXX.")
@@ -191,6 +192,16 @@ target_include_directories(
         "${CMAKE_CURRENT_BINARY_DIR}/generated"
 )
 
+install(TARGETS hzl-visionforge RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(FILES packaging/hzl-visionforge.desktop
+        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")
+install(FILES README.md LICENSE docs/architecture.md docs/performance.md
+              docs/requirements.md docs/roadmap.md docs/release.md
+              docs/user-guide.md
+        DESTINATION "${CMAKE_INSTALL_DOCDIR}")
+configure_file(cmake/ValidateInstall.cmake.in
+               "${CMAKE_CURRENT_BINARY_DIR}/ValidateInstall.cmake" @ONLY)
+
 if(BUILD_TESTING)
     add_test(NAME application.version COMMAND hzl-visionforge --version)
     set_tests_properties(
@@ -203,6 +214,10 @@ if(BUILD_TESTING)
         application.help
         PROPERTIES PASS_REGULAR_EXPRESSION "Usage: hzl-visionforge"
     )
+
+    add_test(NAME release.staged_install
+             COMMAND "${CMAKE_COMMAND}"
+                     -P "${CMAKE_CURRENT_BINARY_DIR}/ValidateInstall.cmake")
 
     add_test(NAME environment.cuda COMMAND hzl-visionforge --gpu-info)
     set_tests_properties(
@@ -382,3 +397,18 @@ if(BUILD_TESTING)
             SKIP_RETURN_CODE 77
     )
 endif()
+
+set(CPACK_PACKAGE_NAME "HZL-VisionForge")
+set(CPACK_PACKAGE_VENDOR "HZL")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+    "GPU-accelerated image and video processing")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_FILE_NAME
+    "hzl-visionforge-${PROJECT_VERSION}-linux-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+set(CPACK_GENERATOR "TGZ")
+set(CPACK_SOURCE_GENERATOR "TGZ")
+set(CPACK_SOURCE_IGNORE_FILES
+    "/build[^/]*/;/.git/;/.agents/;/.codex/;imgui[.]ini$")
+include(CPack)

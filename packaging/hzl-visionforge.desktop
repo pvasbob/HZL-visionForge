@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=HZL-VisionForge
+Comment=GPU-accelerated image and video processing
+Exec=hzl-visionforge
+Terminal=false
+Categories=Graphics;Photography;

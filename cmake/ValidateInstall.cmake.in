@@ -1,0 +1,26 @@
+set(prefix "@CMAKE_CURRENT_BINARY_DIR@/release-validation-prefix")
+file(REMOVE_RECURSE "${prefix}")
+execute_process(
+    COMMAND "@CMAKE_COMMAND@" --install "@CMAKE_CURRENT_BINARY_DIR@" --prefix "${prefix}"
+    RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Staged install failed:\n${output}${error}")
+endif()
+execute_process(
+    COMMAND "${prefix}/@CMAKE_INSTALL_BINDIR@/hzl-visionforge" --version
+    RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error)
+if(NOT result EQUAL 0 OR NOT output MATCHES "HZL-VisionForge @PROJECT_VERSION@")
+    message(FATAL_ERROR "Installed executable failed: ${output}${error}")
+endif()
+foreach(file
+        "@CMAKE_INSTALL_DATAROOTDIR@/applications/hzl-visionforge.desktop"
+        "@CMAKE_INSTALL_DOCDIR@/README.md"
+        "@CMAKE_INSTALL_DOCDIR@/LICENSE"
+        "@CMAKE_INSTALL_DOCDIR@/user-guide.md"
+        "@CMAKE_INSTALL_DOCDIR@/architecture.md"
+        "@CMAKE_INSTALL_DOCDIR@/performance.md")
+    if(NOT EXISTS "${prefix}/${file}")
+        message(FATAL_ERROR "Installed package is missing ${file}")
+    endif()
+endforeach()
+message(STATUS "Release staged-install validation passed: ${output}")

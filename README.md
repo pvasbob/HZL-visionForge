@@ -1,93 +1,92 @@
 # HZL-VisionForge
 
-HZL-VisionForge is a native C++17 and CUDA desktop application for interactive,
-GPU-accelerated image and video processing. The project is currently being built
-incrementally; see the [requirements](docs/requirements.md),
-[roadmap](docs/roadmap.md), and [repository layout](docs/architecture.md).
+This is a C++17/CUDA project I built to experiment with real-time image and
+video processing on an RTX 3080.
 
-## Build
+It can open images, videos, and webcams, run them through a configurable CUDA
+filter pipeline, and display the result with OpenGL and Dear ImGui. There are a
+few comparison views too, including split view and image difference.
 
-A C++17 compiler, CMake 3.20 or newer, a CUDA toolkit, OpenCV 4 with `core`,
-`imgproc`, `imgcodecs`, and `videoio`, OpenGL, and GLFW 3.3 are required. CMake
-fetches pinned GLAD 2.0.8 and Dear ImGui 1.92.9b docking sources. Configure and
-build in a separate directory (the RTX 3080 target defaults to `sm_86`):
+The filters currently include basic color adjustments, blur, sharpen, emboss,
+edge detection, histogram equalization, tone mapping, and color grading.
+
+## Building it
+
+You will need CMake 3.20+, a C++17 compiler, CUDA, OpenCV 4, OpenGL, and GLFW.
+The build downloads GLAD and Dear ImGui automatically.
+
+The CUDA target defaults to `sm_86`, since this project is mainly intended for
+my RTX 3080.
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build
+cmake --build build -j
 ctest --test-dir build --output-on-failure
 ```
 
-Run the current application skeleton with `./build/hzl-visionforge`.
-Inspect the CUDA runtime and verify the target GPU with:
+Then run:
+
+```sh
+./build/hzl-visionforge
+```
+
+If the window does not open, these commands are useful for checking the setup:
 
 ```sh
 ./build/hzl-visionforge --gpu-info
-```
-
-The command exits with status 2 when the CUDA runtime or NVIDIA driver is
-unavailable, and status 3 when no RTX 3080 `sm_86` device is found.
-
-Inspect the linked OpenCV version and run its in-memory smoke test with:
-
-```sh
+./build/hzl-visionforge --graphics-info
 ./build/hzl-visionforge --opencv-info
 ```
 
-Inspect the GLFW, OpenGL, and GLAD environment without opening a visible window:
+## Using it
+
+Open an image, video, or camera from the File menu. Filters can be added,
+reordered, disabled, and adjusted in the pipeline panel.
+
+Use the mouse wheel to zoom and drag the image to pan. The viewport also has
+original, processed, split, side-by-side, and difference modes.
+
+Processed images can be exported as PNG or JPEG.
+
+There are also a few command-line helpers:
 
 ```sh
-./build/hzl-visionforge --graphics-info
+./build/hzl-visionforge --image-info image.png
+./build/hzl-visionforge --video-info video.mp4
+./build/hzl-visionforge --export-image input.png output.jpg
+./build/hzl-visionforge --help
 ```
 
-Verify the Dear ImGui context, keyboard navigation, and docking configuration:
+## Benchmarks
+
+The main benchmark uses a 4K pipeline with color adjustment, Gaussian blur,
+sharpening, and Sobel edge detection.
 
 ```sh
-./build/hzl-visionforge --imgui-info
+./build/gpu_benchmark --iterations 10
+./build/gpu_benchmark --iterations 10 --csv > visionforge-4k.csv
 ```
 
-Load and inspect a PNG, JPEG, BMP, or TIFF image from the command line:
-
-```sh
-./build/hzl-visionforge --image-info path/to/image.png
-```
-
-Export a loaded image to PNG or JPEG from the command line:
-
-```sh
-./build/hzl-visionforge --export-image input.tiff output.png
-```
-
-Inspect a video and decode its first frame with:
-
-```sh
-./build/hzl-visionforge --video-info path/to/video.mp4
-```
-
-Running `./build/hzl-visionforge` opens the dockable application shell with
-viewport, processing, profiling, and status panels. Use **File > Open Image** to
-load images, videos, or webcams and **File > Export Image** to save PNG or JPEG
-output. Configure and reorder GPU filters in **Processing Pipeline** and select
-comparison modes from the viewport toolbar. In
-the viewport, use the mouse wheel to zoom around the
-cursor, drag with the left mouse button to pan, double-click to fit, or use the
-**Fit** and **100%** controls. Press Escape or use **File > Exit** to close it.
-
-Run the CUDA baseline-versus-shared-memory comparison on a CUDA-capable host:
+There is also a smaller benchmark comparing the original and shared-memory CUDA
+kernels:
 
 ```sh
 ./build/cuda_optimization_benchmark
 ```
 
-Run the reproducible CPU/GPU and transfer benchmark with:
+Benchmark numbers depend quite a bit on the build type, driver, GPU load, and
+power settings, so Release builds are the useful ones.
+
+## Packaging
 
 ```sh
-cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
-cmake --build build-release --target gpu_benchmark
-./build-release/gpu_benchmark --iterations 10
-./build-release/gpu_benchmark --iterations 10 --csv > visionforge-4k.csv
+cmake --install build --prefix "$PWD/install"
+cpack --config build/CPackConfig.cmake
 ```
 
-The default workload is the representative 4K color-adjustment, Gaussian,
-sharpening, and Sobel pipeline. See the full
-[benchmark methodology](docs/performance.md).
+More detailed notes are in the [user guide](docs/user-guide.md),
+[architecture](docs/architecture.md), [performance notes](docs/performance.md),
+and [roadmap](docs/roadmap.md).
+
+This first version is Linux-only and expects an NVIDIA CUDA-capable GPU. It is a
+learning/project application rather than a replacement for a full photo editor.

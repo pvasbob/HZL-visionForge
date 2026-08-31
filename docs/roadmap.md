@@ -28,8 +28,8 @@
 - [x] 26. Add robust error handling and user-visible diagnostics
 - [x] 27. Profile and tune the representative 4K pipeline
 - [x] 28. Publish reproducible CPU-versus-GPU benchmarks
-- [ ] 29. Complete user and architecture documentation
-- [ ] 30. Package and validate the initial release
+- [x] 29. Complete user and architecture documentation
+- [x] 30. Package and validate the initial release
 
 The checked item is the latest completed milestone. Each later implementation
 shall update this file when its milestone is complete.
