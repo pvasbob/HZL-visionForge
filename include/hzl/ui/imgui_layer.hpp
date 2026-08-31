@@ -12,6 +12,7 @@
 #include <array>
 #include <chrono>
 #include <iosfwd>
+#include <deque>
 #include <optional>
 #include <string>
 
@@ -33,6 +34,9 @@ public:
     void render();
 
 private:
+    enum class StatusKind { information, warning, error };
+    void report_status(std::string message,
+                       StatusKind kind = StatusKind::information);
     void accept_frame(cv::Mat rgba_pixels, const std::string& label);
     void update_gpu_outputs(bool update_original);
 
@@ -68,6 +72,13 @@ private:
     float pan_x_{0.0F};
     float pan_y_{0.0F};
     bool fit_to_window_{true};
+    StatusKind status_kind_{StatusKind::information};
+    std::deque<std::string> diagnostic_history_;
+    double processing_ms_{0.0};
+    double frames_per_second_{0.0};
+    std::size_t gpu_free_bytes_{0};
+    std::size_t gpu_total_bytes_{0};
+    std::array<float, 256> histogram_plot_{};
     std::string status_message_{"Ready | No media loaded"};
 };
 

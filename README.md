@@ -82,5 +82,12 @@ Run the CUDA baseline-versus-shared-memory comparison on a CUDA-capable host:
 Run the reproducible CPU/GPU and transfer benchmark with:
 
 ```sh
-./build/gpu_benchmark
+cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
+cmake --build build-release --target gpu_benchmark
+./build-release/gpu_benchmark --iterations 10
+./build-release/gpu_benchmark --iterations 10 --csv > visionforge-4k.csv
 ```
+
+The default workload is the representative 4K color-adjustment, Gaussian,
+sharpening, and Sobel pipeline. See the full
+[benchmark methodology](docs/performance.md).

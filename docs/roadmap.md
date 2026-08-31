@@ -25,9 +25,9 @@
 - [x] 23. Implement histogram calculation and equalization
 - [x] 24. Implement tone mapping and color grading
 - [x] 25. Add automated unit and image-correctness tests
-- [ ] 26. Add robust error handling and user-visible diagnostics
-- [ ] 27. Profile and tune the representative 4K pipeline
-- [ ] 28. Publish reproducible CPU-versus-GPU benchmarks
+- [x] 26. Add robust error handling and user-visible diagnostics
+- [x] 27. Profile and tune the representative 4K pipeline
+- [x] 28. Publish reproducible CPU-versus-GPU benchmarks
 - [ ] 29. Complete user and architecture documentation
 - [ ] 30. Package and validate the initial release
 

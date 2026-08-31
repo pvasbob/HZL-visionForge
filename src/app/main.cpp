@@ -8,6 +8,7 @@
 #include "hzl/version.hpp"
 
 #include <iostream>
+#include <exception>
 #include <string_view>
 
 namespace {
@@ -16,7 +17,13 @@ constexpr std::string_view application_name{"HZL-VisionForge"};
 
 }  // namespace
 
-int main(const int argc, const char* const argv[]) {
+int run(const int argc, const char* const argv[]) {
+    if (argc == 2 && std::string_view{argv[1]} == "--help") {
+        std::cout << "Usage: hzl-visionforge [--version|--gpu-info|--opencv-info|"
+                     "--graphics-info|--imgui-info|--image-info FILE|"
+                     "--export-image INPUT OUTPUT|--video-info FILE]\n";
+        return 0;
+    }
     if (argc == 2 && std::string_view{argv[1]} == "--version") {
         std::cout << application_name << ' ' << HZL_VISIONFORGE_VERSION << '\n';
         return 0;
@@ -87,7 +94,26 @@ int main(const int argc, const char* const argv[]) {
                   << "First frame: RGBA8\n";
         return 0;
     }
+    if (argc > 1) {
+        std::cerr << "Invalid command. Run --help for supported options.\n";
+        return 64;
+    }
 
     return static_cast<int>(
         hzl::rendering::run_graphics_application(std::cerr));
+}
+
+int main(const int argc, const char* const argv[]) {
+    try {
+        return run(argc, argv);
+    } catch (const std::exception& exception) {
+        std::cerr << "Fatal error: " << exception.what()
+                  << "\nRun --gpu-info, --graphics-info, and --opencv-info to "
+                     "diagnose the environment.\n";
+        return 70;
+    } catch (...) {
+        std::cerr << "Fatal error: unknown failure. Run the environment diagnostic "
+                     "commands and report this issue.\n";
+        return 70;
+    }
 }

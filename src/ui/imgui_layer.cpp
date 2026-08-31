@@ -6,6 +6,7 @@
 #include <imgui_impl_opengl3.h>
 
 #include <GLFW/glfw3.h>
+#include <cuda_runtime_api.h>
 
 #include <algorithm>
 #include <cmath>
@@ -209,6 +210,18 @@ bool ImGuiLayer::initialize(GLFWwindow* window, std::ostream& errors) {
     return true;
 }
 
+void ImGuiLayer::report_status(std::string message, const StatusKind kind) {
+    status_message_ = std::move(message);
+    status_kind_ = kind;
+    const char* label = kind == StatusKind::error ? "Error: "
+                        : kind == StatusKind::warning ? "Warning: " : "Info: ";
+    diagnostic_history_.push_front(std::string{label} + status_message_);
+    constexpr std::size_t maximum_entries = 32;
+    if (diagnostic_history_.size() > maximum_entries) {
+        diagnostic_history_.pop_back();
+    }
+}
+
 void ImGuiLayer::begin_frame() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -221,7 +234,7 @@ void ImGuiLayer::accept_frame(cv::Mat rgba_pixels, const std::string& label) {
         image_->rgba_pixels.rows != rgba_pixels.rows;
     std::string upload_error;
     if (!image_texture_.upload_rgba8(rgba_pixels, upload_error)) {
-        status_message_ = upload_error;
+        report_status(upload_error, StatusKind::error);
         return;
     }
 
@@ -229,6 +242,12 @@ void ImGuiLayer::accept_frame(cv::Mat rgba_pixels, const std::string& label) {
                                   std::move(rgba_pixels),
                                   4,
                                   CV_8U};
+    const processing::cpu::Histogram histogram =
+        processing::cpu::luminance_histogram(image_->rgba_pixels);
+    std::transform(histogram.begin(), histogram.end(), histogram_plot_.begin(),
+                   [](const std::uint32_t count) {
+                       return static_cast<float>(count);
+                   });
     update_gpu_outputs(true);
     if (dimensions_changed) {
         zoom_ = 1.0F;
@@ -237,10 +256,10 @@ void ImGuiLayer::accept_frame(cv::Mat rgba_pixels, const std::string& label) {
         fit_to_window_ = true;
     }
     export_path_.front() = '\0';
-    status_message_ = "Loaded " + label +
-                      (using_cuda_presentation_
-                           ? " | CUDA pipeline and interop presentation"
-                           : " | OpenGL fallback");
+    report_status("Loaded " + label +
+                  (using_cuda_presentation_
+                       ? " | CUDA pipeline and interop presentation"
+                       : " | OpenGL fallback"));
 }
 
 void ImGuiLayer::update_gpu_outputs(const bool update_original) {
@@ -249,6 +268,7 @@ void ImGuiLayer::update_gpu_outputs(const bool update_original) {
     }
     using_cuda_presentation_ = false;
     processed_image_ = nullptr;
+    const auto processing_start = std::chrono::steady_clock::now();
     try {
         if (update_original) {
             cuda_image_.resize(
@@ -274,9 +294,16 @@ void ImGuiLayer::update_gpu_outputs(const bool update_original) {
         difference_presentation_.swap();
         using_cuda_presentation_ = true;
         pipeline_dirty_ = false;
+        const auto processing_stop = std::chrono::steady_clock::now();
+        processing_ms_ = std::chrono::duration<double, std::milli>(
+                             processing_stop - processing_start).count();
+        frames_per_second_ = processing_ms_ > 0.0 ? 1000.0 / processing_ms_ : 0.0;
+        static_cast<void>(cudaMemGetInfo(&gpu_free_bytes_, &gpu_total_bytes_));
     } catch (const std::exception& exception) {
-        status_message_ = std::string{"CUDA processing unavailable: "} +
-                          exception.what();
+        report_status(std::string{"CUDA processing failed: "} + exception.what() +
+                          " Verify the NVIDIA driver, reduce the image or pipeline, "
+                          "then retry.",
+                      StatusKind::error);
         pipeline_dirty_ = false;
     }
 }
@@ -297,7 +324,7 @@ void ImGuiLayer::draw_application_shell() {
                                    std::chrono::steady_clock::duration>(
                                    std::chrono::duration<double>{1.0 / fps});
         } else {
-            status_message_ = frame.message;
+            report_status(frame.message, StatusKind::error);
             video_source_.close();
         }
     } else if (pipeline_dirty_ && image_) {
@@ -328,7 +355,7 @@ void ImGuiLayer::draw_application_shell() {
                                 false,
                                 video_source_.is_open())) {
                 video_source_.close();
-                status_message_ = "Video/camera input stopped.";
+                report_status("Video/camera input stopped.");
             }
             if (ImGui::MenuItem("Export Image...",
                                 "Ctrl+Shift+S",
@@ -376,7 +403,7 @@ void ImGuiLayer::draw_application_shell() {
                              candidate.source_path.string());
                 ImGui::CloseCurrentPopup();
             } else {
-                status_message_ = result.message;
+                report_status(result.message, StatusKind::error);
             }
         }
         if (cancel_clicked) {
@@ -406,10 +433,10 @@ void ImGuiLayer::draw_application_shell() {
                 video_source_.open_file(video_path_.data());
             if (result) {
                 next_frame_time_ = std::chrono::steady_clock::now();
-                status_message_ = "Opened video " + video_source_.label();
+                report_status("Opened video " + video_source_.label());
                 ImGui::CloseCurrentPopup();
             } else {
-                status_message_ = result.message;
+                report_status(result.message, StatusKind::error);
             }
         }
         if (cancel_clicked) {
@@ -433,10 +460,10 @@ void ImGuiLayer::draw_application_shell() {
                 video_source_.open_camera(camera_index_);
             if (result) {
                 next_frame_time_ = std::chrono::steady_clock::now();
-                status_message_ = "Opened " + video_source_.label();
+                report_status("Opened " + video_source_.label());
                 ImGui::CloseCurrentPopup();
             } else {
-                status_message_ = result.message;
+                report_status(result.message, StatusKind::error);
             }
         }
         if (cancel_clicked) {
@@ -489,14 +516,14 @@ void ImGuiLayer::draw_application_shell() {
                 const media::ImageExportResult result = media::export_image(
                     export_pixels, export_path_.data(), export_options_);
                 if (result) {
-                    status_message_ =
-                        "Exported " + std::string{export_path_.data()};
+                    report_status("Exported " + std::string{export_path_.data()});
                     ImGui::CloseCurrentPopup();
                 } else {
-                    status_message_ = result.message;
+                    report_status(result.message, StatusKind::error);
                 }
             } catch (const std::exception& exception) {
-                status_message_ = exception.what();
+                report_status(std::string{"Export failed: "} + exception.what(),
+                              StatusKind::error);
             }
         }
         if (cancel_clicked) {
@@ -784,30 +811,41 @@ void ImGuiLayer::draw_application_shell() {
     ImGui::End();
 
     ImGui::Begin("Profiler");
-    ImGui::Text("Frame time: --");
-    ImGui::Text("GPU memory: --");
+    ImGui::Text("Processing: %.3f ms", processing_ms_);
+    ImGui::Text("Processing rate: %.1f FPS", frames_per_second_);
+    if (gpu_total_bytes_ != 0U) {
+        constexpr double mib = 1024.0 * 1024.0;
+        ImGui::Text("GPU memory: %.1f MiB used / %.1f MiB total",
+                    static_cast<double>(gpu_total_bytes_ - gpu_free_bytes_) / mib,
+                    static_cast<double>(gpu_total_bytes_) / mib);
+    } else {
+        ImGui::TextDisabled("GPU memory: unavailable");
+    }
     if (image_) {
-        const processing::cpu::Histogram histogram =
-            processing::cpu::luminance_histogram(image_->rgba_pixels);
-        std::array<float, 256> plot{};
-        std::transform(histogram.begin(), histogram.end(), plot.begin(),
-                       [](const std::uint32_t count) {
-                           return static_cast<float>(count);
-                       });
-        ImGui::PlotHistogram("Luminance", plot.data(),
-                             static_cast<int>(plot.size()), 0, nullptr,
+        ImGui::PlotHistogram("Luminance", histogram_plot_.data(),
+                             static_cast<int>(histogram_plot_.size()), 0, nullptr,
                              0.0F, FLT_MAX, ImVec2{0.0F, 100.0F});
     }
     ImGui::End();
 
     ImGui::Begin("Status");
-    ImGui::TextWrapped("%s", status_message_.c_str());
+    const ImVec4 status_color =
+        status_kind_ == StatusKind::error ? ImVec4{1.0F, 0.35F, 0.3F, 1.0F}
+        : status_kind_ == StatusKind::warning ? ImVec4{1.0F, 0.75F, 0.2F, 1.0F}
+                                             : ImVec4{0.55F, 0.85F, 1.0F, 1.0F};
+    ImGui::TextColored(status_color, "%s", status_message_.c_str());
     if (image_) {
         ImGui::Separator();
         ImGui::Text("%d x %d | RGBA8 | Zoom %.0f%%",
                     image_texture_.width(),
                     image_texture_.height(),
                     zoom_ * 100.0F);
+    }
+    if (ImGui::CollapsingHeader("Diagnostic history")) {
+        if (ImGui::SmallButton("Clear")) diagnostic_history_.clear();
+        for (const std::string& entry : diagnostic_history_) {
+            ImGui::BulletText("%s", entry.c_str());
+        }
     }
     ImGui::End();
 }

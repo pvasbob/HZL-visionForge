@@ -198,6 +198,12 @@ if(BUILD_TESTING)
         PROPERTIES PASS_REGULAR_EXPRESSION "HZL-VisionForge ${PROJECT_VERSION}"
     )
 
+    add_test(NAME application.help COMMAND hzl-visionforge --help)
+    set_tests_properties(
+        application.help
+        PROPERTIES PASS_REGULAR_EXPRESSION "Usage: hzl-visionforge"
+    )
+
     add_test(NAME environment.cuda COMMAND hzl-visionforge --gpu-info)
     set_tests_properties(
         environment.cuda
@@ -327,7 +333,8 @@ if(BUILD_TESTING)
             hzl_cuda
             hzl_processing
     )
-    add_test(NAME benchmark.gpu COMMAND gpu_benchmark)
+    add_test(NAME benchmark.gpu COMMAND gpu_benchmark
+             --width 640 --height 360 --iterations 1)
     set_tests_properties(
         benchmark.gpu
         PROPERTIES
